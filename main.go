@@ -384,17 +384,19 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/", s.handleHome)
-	r.Post("/register", s.handleRegister)
-	r.Post("/login", s.handleLogin)
-	r.Get("/me", s.handleMe)
-	r.Route("/lilipads", func(r chi.Router) {
-		r.Use(tokenMiddleware)
-		r.Get("/", s.handleListLilipads)
-		r.Post("/", s.handleCreateLilipad)
-		r.Get("/{id:\\d+}", s.handleGetLilipad)
-		r.Put("/{id:\\d+}", s.handleUpdateLilipad)
-		r.Delete("/{id:\\d+}", s.handleDeleteLilipad)
+	r.Route("/api", func(r chi.Router) {
+		r.Get("/", s.handleHome)
+		r.Post("/register", s.handleRegister)
+		r.Post("/login", s.handleLogin)
+		r.Get("/me", s.handleMe)
+		r.Route("/lilipads", func(r chi.Router) {
+			r.Use(tokenMiddleware)
+			r.Get("/", s.handleListLilipads)
+			r.Post("/", s.handleCreateLilipad)
+			r.Get("/{id:\\d+}", s.handleGetLilipad)
+			r.Put("/{id:\\d+}", s.handleUpdateLilipad)
+			r.Delete("/{id:\\d+}", s.handleDeleteLilipad)
+		})
 	})
 
 	log.Println("Listening on port 3000...")
