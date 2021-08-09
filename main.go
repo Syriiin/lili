@@ -19,7 +19,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var hmacSecret = os.Getenv("SECRET_KEY")
+var hmacSecret = []byte(os.Getenv("SECRET_KEY"))
 
 type server struct {
 	dbpool *pgxpool.Pool
