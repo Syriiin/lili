@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=lili
+      - POSTGRES_USER=lili
+      - POSTGRES_PASSWORD=lili
+  lili:
+    image: lili
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 4000:4000
+    depends_on:
+      - db

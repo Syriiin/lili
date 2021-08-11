@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,
 	username TEXT UNIQUE NOT NULL,
 	password_salted_hash TEXT NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE users (
     last_login TIMESTAMP NOT NULL
 );
 
-CREATE TABLE lilipads (
+CREATE TABLE IF NOT EXISTS lilipads (
 	id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
 	name TEXT NOT NULL,
