@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -49,11 +50,38 @@ func generateToken(userId int, username string) (string, error) {
 	return token.SignedString(hmacSecret)
 }
 
+func validateUsername(username string) error {
+	length := len(username)
+	if length == 0 {
+		return errors.New("username must not be blank")
+	} else if length > 30 {
+		return errors.New("username must not exceed 30 characters")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	length := len(password)
+	if length == 0 {
+		return errors.New("password must not be blank")
+	} else if length > 30 {
+		return errors.New("password must not exceed 30 characters")
+	}
+	return nil
+}
+
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var requestData AuthRequestData
 	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
+	if err != nil || validateUsername(requestData.Username) != nil || validatePassword(requestData.Password) != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	var exists bool
+	err = s.dbpool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)", requestData.Username).Scan(&exists)
+	if err != nil || exists {
+		http.Error(w, "Conflict", http.StatusConflict)
 		return
 	}
 
@@ -83,7 +111,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var requestData AuthRequestData
 	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
+	if err != nil || validateUsername(requestData.Username) != nil || validatePassword(requestData.Password) != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -252,10 +280,20 @@ type CreateLilipadRequestData struct {
 	Name string `json:"name"`
 }
 
+func validateLilipadName(name string) error {
+	length := len(name)
+	if length == 0 {
+		return errors.New("lilipad name must not be blank")
+	} else if length > 255 {
+		return errors.New("lilipad name must not exceed 255 characters")
+	}
+	return nil
+}
+
 func (s *server) handleCreateLilipad(w http.ResponseWriter, r *http.Request) {
 	var requestData CreateLilipadRequestData
 	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
+	if err != nil || validateLilipadName(requestData.Name) != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -306,6 +344,14 @@ type UpdateLilipadRequestData struct {
 	Text string `json:"text"`
 }
 
+func validateLilipadText(text string) error {
+	length := len(text)
+	if length > 1024*1024*8 {
+		return errors.New("lilipad text must not exceed 8MB")
+	}
+	return nil
+}
+
 func (s *server) handleUpdateLilipad(w http.ResponseWriter, r *http.Request) {
 	lilipadId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -314,7 +360,7 @@ func (s *server) handleUpdateLilipad(w http.ResponseWriter, r *http.Request) {
 
 	var requestData UpdateLilipadRequestData
 	err = json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
+	if err != nil || validateLilipadName(requestData.Name) != nil || validateLilipadText(requestData.Text) != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
